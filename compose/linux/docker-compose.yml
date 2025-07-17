@@ -1,0 +1,65 @@
+services:
+  dev_webrtc_build:
+    container_name: dev-webrtc-build
+    image: dev-webrtc-build
+    build:
+      context: ../../
+      dockerfile: dockerfiles/dev_webrtc.dockerfile
+      args:
+        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20240425164112
+    deploy:
+      replicas: 0
+  coturn:
+    container_name: coturn
+    image: coturn/coturn
+    ports:
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+      - "49160-49200:49160-49200/udp"
+    command: >
+      -n
+      --listening-ip=0.0.0.0
+      --realm=${COTURN_HOST}
+      --min-port=49160
+      --max-port=49200
+      --use-auth-secret
+      --static-auth-secret=${COTURN_AUTH_SECRET}
+    restart: unless-stopped
+  dev_webrtc0:
+    container_name: dev-webrtc0
+    image: dev-webrtc-build
+    depends_on:
+      - coturn
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    privileged: true
+    ipc: host
+    pid: host
+    tmpfs:
+      /dev/shm:rw
+    environment:
+      TZ: Asia/Shanghai
+      SIZEW: 1920
+      SIZEH: 1080
+      REFRESH: 60
+      DPI: 96
+      CDEPTH: 24
+      PASSWD: ${WEBRTC_PASSWORD:-password}
+      WEBRTC_ENCODER: nvh264enc
+      BASIC_AUTH_PASSWORD: ${WEBRTC_PASSWORD:-password}
+      TURN_HOST: ${COTURN_HOST}
+      TURN_PORT: 3478
+      TURN_SHARED_SECRET: ${COTURN_AUTH_SECRET}
+      TURN_PROTOCOL: tcp
+    ports:
+      - "8080:8080"
+
+    tty: true
+    restart: unless-stopped
+
+  
