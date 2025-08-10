@@ -13,8 +13,8 @@ USER root
 # Install Basic Dependencies
 
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    apt update && DEBIAN_FRONTEND=noninteractive \
+RUN apt update && DEBIAN_FRONTEND=noninteractive \
+    apt upgrade -y && \
     apt install -y --no-install-recommends \
     locales \
     git \
@@ -41,7 +41,11 @@ RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/Projec
 
 RUN cd /home/${USERNAME}/Projects/IsaacSim && \
     touch .eula_accepted && \
+    ./build.sh --fetch-only
+
+RUN cd /home/${USERNAME}/Projects/IsaacSim && \
     ./build.sh
+
 
 
 RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/Projects/IsaacLab && \
@@ -51,6 +55,46 @@ RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git 
 ENV TERM xterm-256color    
 RUN cd /home/${USERNAME}/Projects/IsaacLab && \
     ./isaaclab.sh -i
+
+########################################################################################################################
+# SSH Setup
+########################################################################################################################
+
+USER root
+
+# Install SSH server
+RUN apt update && \
+    apt install -y openssh-server
+
+# Configure SSH server
+RUN echo 'X11Forwarding yes' >> /etc/ssh/sshd_config && \
+    echo 'X11UseLocalhost no' >> /etc/ssh/sshd_config && \
+    sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
+    sed -i 's/#Port 22/Port 2220/' /etc/ssh/sshd_config
+
+# Add SSHD entrypoint script
+COPY ${RESOURCES_DIR}/sshd_entrypoint.sh /usr/local/bin/sshd_entrypoint.sh
+
+RUN chown ${USERNAME}:${USERNAME} /usr/local/bin/sshd_entrypoint.sh && \
+    chmod +x /usr/local/bin/sshd_entrypoint.sh && \
+    mkdir -p /run/sshd && \
+    echo "" >> /etc/supervisord.conf && \
+    echo "# sshd entrypoint script" >> /etc/supervisord.conf && \
+    echo "[program:sshd]" >> /etc/supervisord.conf && \
+    echo "user=${USERNAME}" >> /etc/supervisord.conf && \
+    echo "command=/usr/local/bin/sshd_entrypoint.sh" >> /etc/supervisord.conf && \
+    echo "autostart=true" >> /etc/supervisord.conf && \
+    echo "autorestart=true" >> /etc/supervisord.conf && \
+    echo "startretries=3" >> /etc/supervisord.conf && \
+    echo "stderr_logfile=/tmp/sshd.err.log" >> /etc/supervisord.conf && \
+    echo "stdout_logfile=/tmp/sshd.out.log" >> /etc/supervisord.conf && \
+    echo "" >> /etc/supervisord.conf
+EXPOSE 2220
+
+########################################################################################################################
+# Cleanup
+########################################################################################################################
 
 
 USER root
