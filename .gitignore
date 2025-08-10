@@ -1,5 +1,6 @@
 .vscode/
 .env
+.ssh_keys
 .conda/
 
 
