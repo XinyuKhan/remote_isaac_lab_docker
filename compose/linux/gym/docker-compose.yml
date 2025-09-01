@@ -1,7 +1,7 @@
 services:
   dev_webrtc_build:
     container_name: dev-webrtc-build
-    image: dev-webrtc-image
+    image: xinyukhan/remote_isaac_lab_docker:${IMG_VERSION:-latest}
     build:
       context: ../../
       dockerfile: dockerfiles/dev_webrtc.dockerfile
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
   dev_webrtc0:
     container_name: dev-webrtc0
-    image: dev-webrtc-image
+    image: xinyukhan/remote_isaac_lab_docker:${IMG_VERSION:-latest}
     depends_on:
       - coturn
     deploy:

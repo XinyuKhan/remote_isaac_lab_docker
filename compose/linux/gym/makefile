@@ -2,6 +2,12 @@
 dev_build:
 	docker compose build
 
+dev_push:
+	docker compose push dev_webrtc_build
+
+dev_pull:
+	docker compose pull
+
 dev_up: dev_build
 	docker compose up -d
 

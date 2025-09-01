@@ -27,33 +27,28 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
     net-tools \
     htop \
     cmake \
-    build-essential
+    build-essential && \
+    apt autoclean && apt autoremove && \
+    rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
 USER ${USERNAME}
 
-RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/Projects/IsaacSim && \
-    cd /home/${USERNAME}/Projects/IsaacSim && \
-    git checkout 533a16022375a8fc3931212a9b513da2ad4277cc && \
+RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/IsaacSim-src && \
+    cd /home/${USERNAME}/IsaacSim-src && \
+    git checkout v5.0.0 && \
     git lfs install && \
-    git lfs pull
-
-
-
-RUN cd /home/${USERNAME}/Projects/IsaacSim && \
+    git lfs pull && \
     touch .eula_accepted && \
-    ./build.sh --fetch-only
+    ./build.sh && \
+    mv _build/linux-x86_64/release /home/${USERNAME}/IsaacSim && \
+    rm -rf /home/${USERNAME}/IsaacSim-src
 
-RUN cd /home/${USERNAME}/Projects/IsaacSim && \
-    ./build.sh
-
-
-
-RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/Projects/IsaacLab && \
-    cd /home/${USERNAME}/Projects/IsaacLab && \
-    ln -s ../IsaacSim/_build/linux-x86_64/release _isaac_sim
+RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/IsaacLab && \
+    cd /home/${USERNAME}/IsaacLab && \
+    ln -s ../IsaacSim _isaac_sim
 
 ENV TERM xterm-256color    
-RUN cd /home/${USERNAME}/Projects/IsaacLab && \
+RUN cd /home/${USERNAME}/IsaacLab && \
     ./isaaclab.sh -i
 
 ########################################################################################################################
@@ -103,7 +98,8 @@ RUN apt autoclean && apt autoremove && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Pitch to avoid removing all content in ~/.cache
-RUN sed -i "s|sudo rm -rf /tmp/.X\* ~/.cache|sudo rm -rf /tmp/.X* \&\& sudo find ~/.cache -mindepth 1 -maxdepth 1 ! -name 'pip' ! -name 'ov' ! -name 'uv' ! -name 'packman' -exec rm -rf {} +|g" /etc/entrypoint.sh
+RUN sed -i "s|rm -rf /tmp/.X\* ~/.cache|rm -rf /tmp/.X\* ~/.cache/gstreamer\* ~/.cache/ksplash ~/.cache/nvidia ~/.cache/plasma\* ~/.cache/qt\* ~/.cache/ksycoca5\* ~/.cache/motd.legal-displayed|g" /etc/entrypoint.sh
+
 
 
 
