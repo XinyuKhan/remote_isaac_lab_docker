@@ -1,12 +1,12 @@
 services:
   dev_webrtc_build:
-    container_name: dev-webrtc-build
-    image: xinyukhan/remote_isaac_lab_docker:${IMG_VERSION:-latest}
+    container_name: gym-webrtc-build
+    image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
     build:
-      context: ../../
-      dockerfile: dockerfiles/dev_webrtc.dockerfile
+      context: ../../../
+      dockerfile: dockerfiles/gym_webrtc.dockerfile
       args:
-        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
+        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:20.04-20250828125139
     deploy:
       replicas: 0
   coturn:
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
   dev_webrtc0:
     container_name: dev-webrtc0
-    image: xinyukhan/remote_isaac_lab_docker:${IMG_VERSION:-latest}
+    image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
     depends_on:
       - coturn
     deploy:

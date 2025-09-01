@@ -3,7 +3,7 @@ services:
     container_name: dev-webrtc-build
     image: xinyukhan/remote_isaac_lab_docker:${IMG_VERSION:-latest}
     build:
-      context: ../../
+      context: ../../../
       dockerfile: dockerfiles/dev_webrtc.dockerfile
       args:
         - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
