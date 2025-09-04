@@ -1,0 +1,28 @@
+diff --git a/Dockerfile b/Dockerfile
+index ff8aa3e5a9c..526abe36871 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -57,7 +57,7 @@ COPY --from=submodule-update /opt/pytorch /opt/pytorch
+ RUN make triton
+ RUN --mount=type=cache,target=/opt/ccache \
+     export eval ${CMAKE_VARS} && \
+-    TORCH_CUDA_ARCH_LIST="3.5 5.2 6.0 6.1 7.0+PTX 8.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" \
++    TORCH_CUDA_ARCH_LIST="3.5 5.2 6.0 6.1 7.0+PTX 8.0 12.0" TORCH_NVCC_FLAGS="-Xfatbin -compress-all" \
+     CMAKE_PREFIX_PATH="$(dirname $(which conda))/../" \
+     python setup.py install
+ 
+diff --git a/cmake/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake b/cmake/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake
+index 01692f6dcb9..43e8d412507 100644
+--- a/cmake/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake
++++ b/cmake/Modules_CUDA_fix/upstream/FindCUDA/select_compute_arch.cmake
+@@ -224,7 +224,9 @@ function(CUDA_SELECT_NVCC_ARCH_FLAGS out_variable)
+         set(arch_bin 9.0)
+         set(arch_ptx 9.0)
+       else()
+-        message(SEND_ERROR "Unknown CUDA Architecture Name ${arch_name} in CUDA_SELECT_NVCC_ARCH_FLAGS")
++        # message(SEND_ERROR "Unknown CUDA Architecture Name ${arch_name} in CUDA_SELECT_NVCC_ARCH_FLAGS")
++        set(arch_bin 12.0)
++        set(arch_ptx 12.0)
+       endif()
+     endif()
+     if(NOT arch_bin)

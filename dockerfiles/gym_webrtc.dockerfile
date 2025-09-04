@@ -10,9 +10,28 @@ ENV USERNAME=${USER:-root}
 # switch to root user to install dependencies
 USER root
 
+RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin && \
+    mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+    wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb && \
+    dpkg -i cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb && \
+    cp /var/cuda-repo-ubuntu2204-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
+    apt update && \
+    apt install -y cuda-toolkit-12-8 && \
+    apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
+    rm cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb
+
+ENV PATH=/usr/local/cuda/bin:$PATH \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+# RUN wget https://developer.download.nvidia.com/compute/cudnn/9.12.0/local_installers/cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb && \
+#     dpkg -i cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb && \
+#     sudo cp /var/cudnn-local-repo-debian12-9.12.0/cudnn-*-keyring.gpg /usr/share/keyrings/ && \
+#     apt update && \
+#     apt install -y cudnn && \
+#     apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
+#     rm cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
+
 # Install Basic Dependencies
-
-
 RUN apt update && DEBIAN_FRONTEND=noninteractive \
     apt upgrade -y && \
     apt install -y --no-install-recommends \
@@ -31,25 +50,15 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
     apt autoclean && apt autoremove && \
     rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
+
+
 USER ${USERNAME}
 
-# RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/IsaacSim-src && \
-#     cd /home/${USERNAME}/IsaacSim-src && \
-#     git checkout v5.0.0 && \
-#     git lfs install && \
-#     git lfs pull && \
-#     touch .eula_accepted && \
-#     ./build.sh && \
-#     mv _build/linux-x86_64/release /home/${USERNAME}/IsaacSim && \
-#     rm -rf /home/${USERNAME}/IsaacSim-src
+RUN echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH" >> /home/${USERNAME}/.bashrc && \
+    echo "export PATH=/usr/local/cuda/bin:\$PATH" >> /home/${USERNAME}/.bashrc
 
-# RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/IsaacLab && \
-#     cd /home/${USERNAME}/IsaacLab && \
-#     ln -s ../IsaacSim _isaac_sim
 
-# ENV TERM xterm-256color    
-# RUN cd /home/${USERNAME}/IsaacLab && \
-#     ./isaaclab.sh -i
+
 
 ########################################################################################################################
 # SSH Setup
@@ -86,6 +95,72 @@ RUN chown ${USERNAME}:${USERNAME} /usr/local/bin/sshd_entrypoint.sh && \
     echo "stdout_logfile=/tmp/sshd.out.log" >> /etc/supervisord.conf && \
     echo "" >> /etc/supervisord.conf
 EXPOSE 2220
+
+
+USER ${USERNAME}
+
+# Set environment variables for Miniconda installation
+ENV CONDA_DIR=/opt/conda \
+    PATH=$CONDA_DIR/bin:$PATH
+
+# Install dependencies and download/install Miniconda
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    /bin/bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    rm /tmp/miniconda.sh && \
+    $CONDA_DIR/bin/conda clean --all --yes
+ENV CONDA_DIR=/opt/conda \
+    PATH=$CONDA_DIR/bin:$PATH
+
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda create -n isaacgym python=3.8
+RUN conda init bash && \
+    echo "export PATH=/opt/conda/bin:\$PATH" >> /home/${USERNAME}/.bashrc && \
+    echo "conda activate isaacgym" >> /home/${USERNAME}/.bashrc
+
+# SHELL ["conda", "run", "-n", "isaacgym", "-v", "--no-capture-output", "/bin/bash", "-c"]
+
+# # RUN conda install -c conda-forge gcc=12.1.0 -y
+# RUN pip install pyyaml typing_extensions
+
+# COPY ${RESOURCES_DIR}/pytorch_50.patch /tmp/pytorch_50.patch
+
+# RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive && \
+#     cd pytorch && \
+#     git apply /tmp/pytorch_50.patch && \
+#     export USE_CUDA=1 && \
+#     export TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0" && \
+#     export MAX_JOBS=$(nproc) && \
+#     python setup.py bdist_wheel && \
+#     pip install dist/*.whl && \
+#     cp dist/*.whl /home/${USERNAME}/ && \
+#     cd .. && rm -rf pytorch
+
+# # restore shell
+# SHELL ["/bin/sh", "-c"]
+
+# export USE_CUDA=1
+# export USE_CUDNN=1
+# export USE_NUMPY=1
+# export TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
+# export MAX_JOBS=$(nproc)
+
+# python setup.py bdist_wheel
+
+# pyyaml typing_extensions 
+
+# SHELL ["conda", "run", "-n", "isaacgym", "-v", "--no-capture-output", "/bin/bash", "-c"]
+
+# RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive
+# conda install -c conda-forge gcc=12.1.0 -y
+
+# pip install torchvision==0.18.1 torchaudio==2.3.1 numpy==1.23.5
+
+# wget https://developer.download.nvidia.com/compute/cudnn/9.12.0/local_installers/cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
+# sudo dpkg -i cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
+# sudo cp /var/cudnn-local-repo-debian12-9.12.0/cudnn-*-keyring.gpg /usr/share/keyrings/
+# sudo apt-get update
+# sudo apt-get -y install cudnn
 
 ########################################################################################################################
 # Cleanup

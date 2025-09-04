@@ -6,16 +6,17 @@ services:
       context: ../../../
       dockerfile: dockerfiles/gym_webrtc.dockerfile
       args:
-        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:20.04-20250828125139
+        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
     deploy:
       replicas: 0
   coturn:
-    container_name: coturn
+    container_name: gym-coturn
     image: coturn/coturn
     ports:
       - "${COTURN_PORT:-3478}:3478/udp"
       - "${COTURN_PORT:-3478}:3478"
       - "49160-49200:49160-49200/udp"
+      - "49160-49200:49160-49200"
     command: >
       -n
       --listening-ip=0.0.0.0
@@ -25,8 +26,8 @@ services:
       --use-auth-secret
       --static-auth-secret=${COTURN_AUTH_SECRET}
     restart: unless-stopped
-  dev_webrtc0:
-    container_name: dev-webrtc0
+  dev-webrtc0:
+    container_name: gym-webrtc0
     image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
     depends_on:
       - coturn
@@ -66,6 +67,8 @@ services:
     ports:
       - "8080:8080"
       - "2220:2220"
+    volumes:
+      - ~/Projects:/home/ubuntu/Projects
     tty: true
     restart: unless-stopped
 
