@@ -2,5 +2,6 @@
 .env
 .ssh_keys
 .conda/
+.downloads/
 
 

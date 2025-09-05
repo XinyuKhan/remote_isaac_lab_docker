@@ -10,15 +10,14 @@ ENV USERNAME=${USER:-root}
 # switch to root user to install dependencies
 USER root
 
-RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin && \
-    mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-    wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb && \
+RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+    cd /home/${USERNAME}/.downloads && \
+    cp cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
     dpkg -i cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb && \
     cp /var/cuda-repo-ubuntu2204-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/ && \
     apt update && \
     apt install -y cuda-toolkit-12-8 && \
-    apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
-    rm cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb
+    apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
 # ENV PATH=/usr/local/cuda/bin:$PATH \
 #     LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
@@ -30,6 +29,13 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86
 #     apt install -y cudnn && \
 #     apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
 #     rm cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
+
+RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+    tar -xvf /home/${USERNAME}/.downloads/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz -C . && \
+    cp cudnn-linux-x86_64-8.9.7.29_cuda12-archive/lib/libcudnn* /usr/lib/x86_64-linux-gnu/ && \
+    cp -r cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/* /usr/include/x86_64-linux-gnu/ && \
+    rm -rf cudnn-linux-x86_64-8.9.7.29_cuda12-archive
+
 
 # Install Basic Dependencies
 RUN apt update && DEBIAN_FRONTEND=noninteractive \
@@ -46,7 +52,8 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
     net-tools \
     htop \
     cmake \
-    build-essential && \
+    build-essential \
+    openssh-server && \
     apt autoclean && apt autoremove && \
     rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
@@ -65,10 +72,6 @@ RUN echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH" >> /ho
 ########################################################################################################################
 
 USER root
-
-# Install SSH server
-RUN apt update && \
-    apt install -y openssh-server
 
 # Configure SSH server
 RUN echo 'X11Forwarding yes' >> /etc/ssh/sshd_config && \
@@ -104,7 +107,9 @@ ENV CONDA_DIR=/opt/conda \
     PATH=$CONDA_DIR/bin:$PATH
 
 # Install dependencies and download/install Miniconda
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+    cd /home/${USERNAME}/.downloads && \
+    cp Miniconda3-latest-Linux-x86_64.sh /tmp/miniconda.sh && \
     /bin/bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
     rm /tmp/miniconda.sh && \
     $CONDA_DIR/bin/conda clean --all --yes
@@ -120,12 +125,15 @@ RUN conda init bash && \
 
 SHELL ["conda", "run", "-n", "isaacgym", "-v", "--no-capture-output", "/bin/bash", "-c"]
 
-# # RUN conda install -c conda-forge gcc=12.1.0 -y
+RUN echo "export LD_LIBRARY_PATH=/opt/conda/envs/isaacgym/lib:\$LD_LIBRARY_PATH" >> /home/${USERNAME}/.bashrc
+
+
 RUN pip install pyyaml typing_extensions numpy==1.23.5
 
 COPY ${RESOURCES_DIR}/pytorch_50.patch /tmp/pytorch_50.patch
 
-RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive && \
+RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+    unzip -q /home/${USERNAME}/.downloads/pytorch.zip -d . && \
     cd pytorch && \
     git apply /tmp/pytorch_50.patch && \
     export USE_CUDA=1 && \
@@ -140,6 +148,7 @@ RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive && \
 RUN conda install -c conda-forge libstdcxx-ng=12 -y
 
 RUN pip install torchvision==0.18.1 torchaudio==2.3.1 numpy==1.23.5
+
 
 # restore shell
 SHELL ["/bin/sh", "-c"]
