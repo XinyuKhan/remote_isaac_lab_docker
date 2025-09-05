@@ -20,8 +20,8 @@ RUN wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86
     apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
     rm cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb
 
-ENV PATH=/usr/local/cuda/bin:$PATH \
-    LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+# ENV PATH=/usr/local/cuda/bin:$PATH \
+#     LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 # RUN wget https://developer.download.nvidia.com/compute/cudnn/9.12.0/local_installers/cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb && \
 #     dpkg -i cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb && \
@@ -118,26 +118,31 @@ RUN conda init bash && \
     echo "export PATH=/opt/conda/bin:\$PATH" >> /home/${USERNAME}/.bashrc && \
     echo "conda activate isaacgym" >> /home/${USERNAME}/.bashrc
 
-# SHELL ["conda", "run", "-n", "isaacgym", "-v", "--no-capture-output", "/bin/bash", "-c"]
+SHELL ["conda", "run", "-n", "isaacgym", "-v", "--no-capture-output", "/bin/bash", "-c"]
 
 # # RUN conda install -c conda-forge gcc=12.1.0 -y
-# RUN pip install pyyaml typing_extensions
+RUN pip install pyyaml typing_extensions numpy==1.23.5
 
-# COPY ${RESOURCES_DIR}/pytorch_50.patch /tmp/pytorch_50.patch
+COPY ${RESOURCES_DIR}/pytorch_50.patch /tmp/pytorch_50.patch
 
-# RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive && \
-#     cd pytorch && \
-#     git apply /tmp/pytorch_50.patch && \
-#     export USE_CUDA=1 && \
-#     export TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0" && \
-#     export MAX_JOBS=$(nproc) && \
-#     python setup.py bdist_wheel && \
-#     pip install dist/*.whl && \
-#     cp dist/*.whl /home/${USERNAME}/ && \
-#     cd .. && rm -rf pytorch
+RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive && \
+    cd pytorch && \
+    git apply /tmp/pytorch_50.patch && \
+    export USE_CUDA=1 && \
+    export TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0" && \
+    export MAX_JOBS=$(nproc) && \
+    export PATH=/usr/local/cuda/bin:$PATH && \
+    export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH && \
+    python setup.py bdist_wheel && \
+    cp dist/*.whl /home/${USERNAME}/ && \
+    cd .. && rm -rf pytorch
 
-# # restore shell
-# SHELL ["/bin/sh", "-c"]
+RUN conda install -c conda-forge libstdcxx-ng=12 -y
+
+RUN pip install torchvision==0.18.1 torchaudio==2.3.1 numpy==1.23.5
+
+# restore shell
+SHELL ["/bin/sh", "-c"]
 
 # export USE_CUDA=1
 # export USE_CUDNN=1
@@ -153,7 +158,7 @@ RUN conda init bash && \
 
 # RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive
 # conda install -c conda-forge gcc=12.1.0 -y
-
+# conda install -c conda-forge libstdcxx-ng=12
 # pip install torchvision==0.18.1 torchaudio==2.3.1 numpy==1.23.5
 
 # wget https://developer.download.nvidia.com/compute/cudnn/9.12.0/local_installers/cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
