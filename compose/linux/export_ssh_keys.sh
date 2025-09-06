@@ -1,7 +1,7 @@
 rm -rf .ssh_keys
 
 # Get all containers id 
-containers=$(docker ps -q --filter "name=dev-webrtc")
+containers=$(docker ps -q --filter "name=webrtc")
 
 # Loop through each container and copy the SSH keys
 for container in $containers; do

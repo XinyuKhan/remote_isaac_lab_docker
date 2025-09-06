@@ -10,7 +10,7 @@ ENV USERNAME=${USER:-root}
 # switch to root user to install dependencies
 USER root
 
-RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+RUN --mount=type=bind,source=./compose/linux/.downloads,target=/home/${USERNAME}/.downloads \
     cd /home/${USERNAME}/.downloads && \
     cp cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
     dpkg -i cuda-repo-ubuntu2204-12-8-local_12.8.0-570.86.10-1_amd64.deb && \
@@ -30,7 +30,7 @@ RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERN
 #     apt clean && rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/* && \
 #     rm cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
 
-RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+RUN --mount=type=bind,source=./compose/linux/.downloads,target=/home/${USERNAME}/.downloads \
     tar -xvf /home/${USERNAME}/.downloads/cudnn-linux-x86_64-8.9.7.29_cuda12-archive.tar.xz -C . && \
     cp cudnn-linux-x86_64-8.9.7.29_cuda12-archive/lib/libcudnn* /usr/lib/x86_64-linux-gnu/ && \
     cp -r cudnn-linux-x86_64-8.9.7.29_cuda12-archive/include/* /usr/include/x86_64-linux-gnu/ && \
@@ -107,7 +107,7 @@ ENV CONDA_DIR=/opt/conda \
     PATH=$CONDA_DIR/bin:$PATH
 
 # Install dependencies and download/install Miniconda
-RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+RUN --mount=type=bind,source=./compose/linux/.downloads,target=/home/${USERNAME}/.downloads \
     cd /home/${USERNAME}/.downloads && \
     cp Miniconda3-latest-Linux-x86_64.sh /tmp/miniconda.sh && \
     /bin/bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
@@ -132,7 +132,7 @@ RUN pip install pyyaml typing_extensions numpy==1.23.5
 
 COPY ${RESOURCES_DIR}/pytorch_50.patch /tmp/pytorch_50.patch
 
-RUN --mount=type=bind,source=./compose/linux/gym/.downloads,target=/home/${USERNAME}/.downloads \
+RUN --mount=type=bind,source=./compose/linux/.downloads,target=/home/${USERNAME}/.downloads \
     unzip -q /home/${USERNAME}/.downloads/pytorch.zip -d . && \
     cd pytorch && \
     git apply /tmp/pytorch_50.patch && \

@@ -1,9 +1,19 @@
 services:
-  dev_webrtc_build:
-    container_name: gym-webrtc-build
+  webrtc_issaclab_build:
+    container_name: webrtc-issaclab-build
+    image: xinyukhan/remote_isaaclab_docker:${IMG_VERSION:-latest}
+    build:
+      context: ../../
+      dockerfile: dockerfiles/dev_webrtc.dockerfile
+      args:
+        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
+    deploy:
+      replicas: 0
+  webrtc_gym_build:
+    container_name: webrtc-gym-build
     image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
     build:
-      context: ../../../
+      context: ../../
       dockerfile: dockerfiles/gym_webrtc.dockerfile
       args:
         - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
@@ -26,9 +36,9 @@ services:
       --use-auth-secret
       --static-auth-secret=${COTURN_AUTH_SECRET}
     restart: unless-stopped
-  dev-webrtc0:
-    container_name: gym-webrtc0
-    image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
+  webrtc_isaaclab0:
+    container_name: webrtc-isaaclab0
+    image: xinyukhan/remote_isaaclab_docker:${IMG_VERSION:-latest}
     depends_on:
       - coturn
     deploy:
@@ -67,6 +77,49 @@ services:
     ports:
       - "8080:8080"
       - "2220:2220"
+    tty: true
+    restart: unless-stopped
+  webrtc-gym0:
+    container_name: webrtc-gym0
+    image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
+    depends_on:
+      - coturn
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    privileged: true
+    ipc: host
+    pid: host
+    tmpfs:
+      /dev/shm:rw
+    environment:
+      TZ: Asia/Shanghai
+      DISPLAY_SIZEW: 1920
+      DISPLAY_SIZEH: 1080
+      DISPLAY_REFRESH: 60
+      DISPLAY_DPI: 96
+      DISPLAY_CDEPTH: 24
+      PASSWD: ${WEBRTC_PASSWORD:-password}
+      SELKIES_WEBRTC_ENCODER: nvh264enc
+      SELKIES_ENABLE_RESIZE: false
+      SELKIES_VIDEO_BITRATE: 2000
+      SELKIES_FRAMERATE: 30
+      SELKIES_AUDIO_BITRATE: 128000
+      SELKIES_ENABLE_BASIC_AUTH: true
+      SELKIES_BASIC_AUTH_PASSWORD: ${WEBRTC_PASSWORD:-password}
+      SELKIES_ENABLE_HTTPS: true
+      SELKIES_TURN_HOST: ${COTURN_HOST}
+      SELKIES_TURN_PORT: ${COTURN_PORT:-3478}
+      SELKIES_TURN_SHARED_SECRET: ${COTURN_AUTH_SECRET}
+      SELKIES_TURN_PROTOCOL: tcp
+      SELKIES_TURN_TLS: false
+    ports:
+      - "8081:8080"
+      - "2221:2220"
     volumes:
       - ~/Projects:/home/ubuntu/Projects
     tty: true
