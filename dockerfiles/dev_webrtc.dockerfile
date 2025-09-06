@@ -40,8 +40,7 @@ RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/IsaacS
     git lfs pull && \
     touch .eula_accepted && \
     ./build.sh && \
-    mv _build/linux-x86_64/release /home/${USERNAME}/IsaacSim && \
-    rm -rf /home/${USERNAME}/IsaacSim-src
+    ln -s _build/linux-x86_64/release /home/${USERNAME}/IsaacSim
 
 RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/IsaacLab && \
     cd /home/${USERNAME}/IsaacLab && \
