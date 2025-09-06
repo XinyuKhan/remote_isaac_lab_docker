@@ -1,8 +1,8 @@
 #!/bin/bash
 
-mkdir -p .downloads
+mkdir -p .downloads/gym 
 
-cd .downloads
+pushd .downloads/gym
 
 if [ -f "cuda-ubuntu2204.pin" ]; then
     echo "Files already downloaded."
@@ -32,7 +32,6 @@ else
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 fi
 
-
 if [ -f "pytorch.zip" ]; then
     echo "Directory already archived."
 else
@@ -45,3 +44,25 @@ else
     fi
     zip -r pytorch.zip pytorch
 fi
+
+popd
+
+mkdir -p .downloads/isaac_lab
+
+pushd .downloads/isaac_lab
+
+if [ -f "isaac-sim-standalone-5.0.0-linux-x86_64.zip" ]; then
+    echo "Files already downloaded."
+else
+    echo "Downloading files..."
+    wget https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.0.0-linux-x86_64.zip
+fi
+
+if [ -d "IsaacLab" ]; then
+    echo "IsaacLab directory already exists."
+else
+    echo "Cloning IsaacLab repository..."
+    git clone https://github.com/isaac-sim/IsaacLab.git
+fi
+
+popd

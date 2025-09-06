@@ -33,16 +33,19 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
 
 USER ${USERNAME}
 
-RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/IsaacSim-src && \
-    cd /home/${USERNAME}/IsaacSim-src && \
-    git checkout v5.0.0 && \
-    git lfs install && \
-    git lfs pull && \
-    touch .eula_accepted && \
-    ./build.sh && \
-    ln -s _build/linux-x86_64/release /home/${USERNAME}/IsaacSim
+# RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/IsaacSim-src && \
+#     cd /home/${USERNAME}/IsaacSim-src && \
+#     git checkout v5.0.0 && \
+#     git lfs install && \
+#     git lfs pull && \
+#     touch .eula_accepted && \
+#     ./build.sh && \
+#     ln -s _build/linux-x86_64/release /home/${USERNAME}/IsaacSim
+RUN --mount=type=bind,source=./compose/linux/.downloads/isaac_lab,target=/home/${USERNAME}/.downloads \
+    unzip /home/${USERNAME}/.downloads/isaac-sim-standalone-5.0.0-linux-x86_64.zip -d /home/${USERNAME}/IsaacSim
 
-RUN git clone -b feature/isaacsim_5_0 https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/IsaacLab && \
+RUN --mount=type=bind,source=./compose/linux/.downloads/isaac_lab,target=/home/${USERNAME}/.downloads \
+    cp -rf /home/${USERNAME}/.downloads/IsaacLab /home/${USERNAME}/IsaacLab && \
     cd /home/${USERNAME}/IsaacLab && \
     ln -s ../IsaacSim _isaac_sim
 
