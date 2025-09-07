@@ -17,5 +17,11 @@ dev_down:
 dev_purge:
 	docker compose down --volumes --remove-orphans
 
+dev_stop:
+	docker compose stop
+
+dev_start:
+	docker compose start
+
 
   
