@@ -153,28 +153,8 @@ RUN pip install torchvision==0.18.1 torchaudio==2.3.1 numpy==1.23.5
 # restore shell
 SHELL ["/bin/sh", "-c"]
 
-# export USE_CUDA=1
-# export USE_CUDNN=1
-# export USE_NUMPY=1
-# export TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;12.0"
-# export MAX_JOBS=$(nproc)
-
-# python setup.py bdist_wheel
-
-# pyyaml typing_extensions 
-
-# SHELL ["conda", "run", "-n", "isaacgym", "-v", "--no-capture-output", "/bin/bash", "-c"]
-
-# RUN git clone https://github.com/pytorch/pytorch -b v2.3.1 --recursive
-# conda install -c conda-forge gcc=12.1.0 -y
-# conda install -c conda-forge libstdcxx-ng=12
-# pip install torchvision==0.18.1 torchaudio==2.3.1 numpy==1.23.5
-
-# wget https://developer.download.nvidia.com/compute/cudnn/9.12.0/local_installers/cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
-# sudo dpkg -i cudnn-local-repo-debian12-9.12.0_1.0-1_amd64.deb
-# sudo cp /var/cudnn-local-repo-debian12-9.12.0/cudnn-*-keyring.gpg /usr/share/keyrings/
-# sudo apt-get update
-# sudo apt-get -y install cudnn
+ENV LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH
+RUN echo "export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH" >> /home/${USERNAME}/.bashrc
 
 ########################################################################################################################
 # Cleanup

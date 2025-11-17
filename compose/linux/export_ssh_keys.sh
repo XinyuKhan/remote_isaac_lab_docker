@@ -7,8 +7,8 @@ containers=$(docker ps -q --filter "name=webrtc")
 for container in $containers; do
   container_name=$(docker inspect --format '{{.Name}}' $container | sed 's/\///')
   mkdir -p .ssh_keys/$container_name
-  docker cp $container:/export_keys/id_rsa.pub .ssh_keys/$container_name/id_rsa.pub
-  docker cp $container:/export_keys/id_rsa .ssh_keys/$container_name/id_rsa
+  docker cp $container:/etc/export_keys/id_rsa.pub .ssh_keys/$container_name/id_rsa.pub
+  docker cp $container:/etc/export_keys/id_rsa .ssh_keys/$container_name/id_rsa
   chmod 600 .ssh_keys/$container_name/id_rsa
   chmod 644 .ssh_keys/$container_name/id_rsa.pub
   zip -r .ssh_keys/$container_name.zip .ssh_keys/$container_name
