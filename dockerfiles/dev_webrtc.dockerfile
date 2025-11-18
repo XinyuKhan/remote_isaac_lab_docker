@@ -33,26 +33,6 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
 
 USER ${USERNAME}
 
-# RUN git clone https://github.com/isaac-sim/IsaacSim.git /home/${USERNAME}/IsaacSim-src && \
-#     cd /home/${USERNAME}/IsaacSim-src && \
-#     git checkout v5.0.0 && \
-#     git lfs install && \
-#     git lfs pull && \
-#     touch .eula_accepted && \
-#     ./build.sh && \
-#     ln -s _build/linux-x86_64/release /home/${USERNAME}/IsaacSim
-RUN --mount=type=bind,source=./compose/linux/.downloads/isaac_lab,target=/home/${USERNAME}/.downloads \
-    unzip /home/${USERNAME}/.downloads/isaac-sim-standalone-5.0.0-linux-x86_64.zip -d /home/${USERNAME}/IsaacSim
-
-RUN --mount=type=bind,source=./compose/linux/.downloads/isaac_lab,target=/home/${USERNAME}/.downloads \
-    cp -rf /home/${USERNAME}/.downloads/IsaacLab /home/${USERNAME}/IsaacLab && \
-    cd /home/${USERNAME}/IsaacLab && \
-    ln -s ../IsaacSim _isaac_sim
-
-ENV TERM xterm-256color    
-RUN cd /home/${USERNAME}/IsaacLab && \
-    ./isaaclab.sh -i
-
 ########################################################################################################################
 # SSH Setup
 ########################################################################################################################
@@ -88,6 +68,52 @@ RUN chown ${USERNAME}:${USERNAME} /usr/local/bin/sshd_entrypoint.sh && \
     echo "stdout_logfile=/tmp/sshd.out.log" >> /etc/supervisord.conf && \
     echo "" >> /etc/supervisord.conf
 EXPOSE 2220
+
+USER ${USERNAME}
+
+
+# Set environment variables for Miniconda installation
+ENV CONDA_DIR=/opt/conda \
+    PATH=$CONDA_DIR/bin:$PATH
+
+# Install conda
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
+    bash /tmp/miniconda.sh -b -p ${CONDA_DIR} && \
+    rm /tmp/miniconda.sh && \
+    ${CONDA_DIR}/bin/conda clean -afy
+
+ENV CONDA_DIR=/opt/conda \
+    PATH=$CONDA_DIR/bin:$PATH    
+
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda create -n env_isaaclab python=3.11
+
+RUN conda init bash && \
+    echo "export PATH=/opt/conda/bin:\$PATH" >> /home/${USERNAME}/.bashrc && \
+    echo "conda activate env_isaaclab" >> /home/${USERNAME}/.bashrc
+
+SHELL ["conda", "run", "-n", "env_isaaclab", "-v", "--no-capture-output", "/bin/bash", "-c"]
+
+# Install Isaac Sim
+RUN pip install "isaacsim[all,extscache]==5.1.0" --extra-index-url https://pypi.nvidia.com
+
+RUN pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+
+# Agree to Isaac Sim EULA
+ENV ACCEPT_EULA=Y
+
+
+RUN git clone https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/IsaacLab
+
+
+ENV TERM xterm-256color
+RUN cd /home/${USERNAME}/IsaacLab && \
+    ./isaaclab.sh -i
+
+SHELL ["/bin/sh", "-c"]
+
+
 
 ########################################################################################################################
 # Cleanup
