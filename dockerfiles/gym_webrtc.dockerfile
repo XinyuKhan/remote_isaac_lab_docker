@@ -170,6 +170,23 @@ RUN apt autoclean && apt autoremove && \
 RUN sed -i "s|rm -rf /tmp/.X\* ~/.cache|rm -rf /tmp/.X\* ~/.cache/gstreamer\* ~/.cache/ksplash ~/.cache/nvidia ~/.cache/plasma\* ~/.cache/qt\* ~/.cache/ksycoca5\* ~/.cache/motd.legal-displayed|g" /etc/entrypoint.sh
 
 
+### Proxy Setup
+
+USER ${USERNAME}
+
+COPY --chown=${USERNAME}:${USERNAME} ${RESOURCES_DIR}/proxy_utils.sh /home/${USERNAME}/proxy_utils.sh
+
+RUN chmod +x /home/${USERNAME}/proxy_utils.sh && \
+    echo "" >> /home/${USERNAME}/.bashrc && \
+    echo "source /home/${USERNAME}/proxy_utils.sh" >> /home/${USERNAME}/.bashrc && \
+    echo "" >> /home/${USERNAME}/.bashrc && \
+    echo "if [ \"\$SHELL_AUTO_PROXY\" = \"true\" ]; then" >> /home/${USERNAME}/.bashrc && \
+    echo "    proxy" >> /home/${USERNAME}/.bashrc && \
+    echo "fi" >> /home/${USERNAME}/.bashrc && \
+    echo "" >> /home/${USERNAME}/.bashrc && \
+    echo "export DISPLAY=:20" >> /home/${USERNAME}/.bashrc
+
+########################################################################################################################
 
 
 # Restore User
