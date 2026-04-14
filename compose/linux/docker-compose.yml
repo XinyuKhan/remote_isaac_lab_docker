@@ -19,6 +19,16 @@ services:
         - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
     deploy:
       replicas: 0
+  webrtc_playgroud_build:
+    container_name: webrtc-playgroud-build
+    image: xinyukhan/remote_playgroud_docker:${IMG_VERSION:-latest}
+    build:
+      context: ../../
+      dockerfile: dockerfiles/playgroud_webrtc.dockerfile
+      args:
+        - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
+    deploy:
+      replicas: 0
   coturn:
     container_name: gym-coturn
     image: coturn/coturn
@@ -81,6 +91,8 @@ services:
     ports:
       - "8080:8080"
       - "2220:2220"
+    volumes:
+      - ~/Projects:/home/ubuntu/Projects
     tty: true
     restart: unless-stopped
   webrtc-gym0:
@@ -132,5 +144,53 @@ services:
       - ~/Projects:/home/ubuntu/Projects
     tty: true
     restart: unless-stopped
-
+  webrtc_playgroud0:
+    container_name: webrtc-playgroud0
+    image: xinyukhan/remote_playgroud_docker:${IMG_VERSION:-latest}
+    depends_on:
+      - coturn
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    privileged: true
+    ipc: host
+    pid: host
+    tmpfs:
+      /dev/shm:rw
+    environment:
+      TZ: Asia/Shanghai
+      DISPLAY_SIZEW: 1920
+      DISPLAY_SIZEH: 1080
+      DISPLAY_REFRESH: 60
+      DISPLAY_DPI: 96
+      DISPLAY_CDEPTH: 24
+      PASSWD: ${WEBRTC_PASSWORD:-password}
+      SELKIES_WEBRTC_ENCODER: nvh264enc
+      SELKIES_ENABLE_RESIZE: false
+      SELKIES_VIDEO_BITRATE: 2000
+      SELKIES_FRAMERATE: 30
+      SELKIES_AUDIO_BITRATE: 128000
+      SELKIES_ENABLE_BASIC_AUTH: true
+      SELKIES_BASIC_AUTH_PASSWORD: ${WEBRTC_PASSWORD:-password}
+      SELKIES_ENABLE_HTTPS: true
+      SELKIES_TURN_HOST: ${COTURN_HOST}
+      SELKIES_TURN_PORT: ${COTURN_PORT:-3478}
+      SELKIES_TURN_SHARED_SECRET: ${COTURN_AUTH_SECRET}
+      SELKIES_TURN_PROTOCOL: tcp
+      SELKIES_TURN_TLS: false
+      PROXY_ADDR: ${DOCKER_PROXY_ADDR:-172.17.0.1}
+      PROXY_PORT_HTTP: ${DOCKER_PROXY_PORT_HTTP:-10808}
+      PROXY_PORT_HTTPS: ${DOCKER_PROXY_PORT_HTTPS:-10808}
+      SHELL_AUTO_PROXY: ${SHELL_AUTO_PROXY:-false}
+    ports:
+      - "8082:8080"
+      - "2222:2220"
+    volumes:
+      - ~/Projects:/home/ubuntu/Projects
+    tty: true
+    restart: unless-stopped
   
