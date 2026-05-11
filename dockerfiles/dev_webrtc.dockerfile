@@ -27,8 +27,9 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
     net-tools \
     htop \
     cmake \
-    build-essential && \
-    apt autoclean && apt autoremove && \
+    build-essential \
+    openssh-server && \
+    apt autoclean -y && apt autoremove -y && \
     rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
 USER ${USERNAME}
@@ -38,10 +39,6 @@ USER ${USERNAME}
 ########################################################################################################################
 
 USER root
-
-# Install SSH server
-RUN apt update && \
-    apt install -y openssh-server
 
 # Configure SSH server
 RUN echo 'X11Forwarding yes' >> /etc/ssh/sshd_config && \
@@ -122,7 +119,7 @@ SHELL ["/bin/sh", "-c"]
 
 USER root
 # Clear cache
-RUN apt autoclean && apt autoremove && \
+RUN apt autoclean -y && apt autoremove -y && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Pitch to avoid removing all content in ~/.cache

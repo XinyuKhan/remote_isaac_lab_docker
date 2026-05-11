@@ -3,6 +3,10 @@ FROM ${FROM_IMAGE}
 
 ARG RESOURCES_DIR="resources"
 
+# cuRobo CUDA variant: cu12-torch (default) or cu13-torch
+# Override with: --build-arg CUROBO_CUDA_VARIANT=cu13-torch
+ARG CUROBO_CUDA_VARIANT="cu12-torch"
+
 # store current user in USERNAME
 ENV USERNAME=${USER:-root}
 
@@ -69,58 +73,49 @@ EXPOSE 2220
 USER ${USERNAME}
 
 
-# Set environment variables for Miniconda installation
-ENV CONDA_DIR=/opt/conda \
-    PATH=$CONDA_DIR/bin:$PATH
+########################################################################################################################
+# cuRobo Installation
+# Reference: https://nvlabs.github.io/curobo/latest/getting-started/installation.html
+########################################################################################################################
 
-# Install conda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O /tmp/miniconda.sh && \
-    bash /tmp/miniconda.sh -b -p ${CONDA_DIR} && \
-    rm /tmp/miniconda.sh && \
-    ${CONDA_DIR}/bin/conda clean -afy
+USER root
 
-ENV CONDA_DIR=/opt/conda \
-    PATH=$CONDA_DIR/bin:$PATH    
+# Install uv (recommended by cuRobo)
+ENV UV_INSTALL_DIR=/usr/local/bin
+RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL=${UV_INSTALL_DIR} sh && \
+    chmod +x ${UV_INSTALL_DIR}/uv ${UV_INSTALL_DIR}/uvx
 
-RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
-    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
-    conda create -n env_isaaclab python=3.10
+USER ${USERNAME}
 
-RUN conda init bash && \
-    echo "export PATH=/opt/conda/bin:\$PATH" >> /home/${USERNAME}/.bashrc && \
-    echo "conda activate env_isaaclab" >> /home/${USERNAME}/.bashrc
+ENV CUROBO_DIR=/home/${USERNAME}/curobo \
+    CUROBO_VENV=/home/${USERNAME}/curobo/.venv
 
-SHELL ["conda", "run", "-n", "env_isaaclab", "-v", "--no-capture-output", "/bin/bash", "-c"]
+# Clone cuRobo
+RUN git clone https://github.com/NVlabs/curobo ${CUROBO_DIR} --branch v0.8.0
 
+# Create virtual environment with Python 3.11 and install cuRobo with CUDA 12.x torch support
+ENV TERM=xterm-256color
+RUN cd ${CUROBO_DIR} && \
+    uv venv --python 3.12 && \
+    . ${CUROBO_VENV}/bin/activate && \
+    uv pip install ".[${CUROBO_CUDA_VARIANT}]"
 
-RUN pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+ENV SOMA_RETARGETER_DIR=/home/${USERNAME}/soma-retargeter
 
-RUN pip install --upgrade pip
-
-# Install Isaac Sim
-RUN pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
-
-
-# Agree to Isaac Sim EULA
-ENV ACCEPT_EULA=Y
-
-RUN pip install flatdict==4.0.1 --no-build-isolation
-
-COPY ${RESOURCES_DIR}/isaaclab.patch /home/${USERNAME}/isaaclab.patch
-RUN git clone https://github.com/isaac-sim/IsaacLab.git -b v2.1.1 /home/${USERNAME}/IsaacLab
+RUN git clone https://github.com/NVIDIA/soma-retargeter.git ${SOMA_RETARGETER_DIR} --branch v0.1.0 && \
+    cd ${SOMA_RETARGETER_DIR} && \
+    git lfs install && \
+    git lfs pull && \
+    . ${CUROBO_VENV}/bin/activate && \
+    uv pip install -e . --extra-index-url https://pypi.nvidia.com --prerelease allow
 
 
-ENV TERM xterm-256color
-RUN cd /home/${USERNAME}/IsaacLab && \
-    ./isaaclab.sh -i
-
-
-
-
-# # for 50 series compatibility, install latest nightly build of torch and torchvision
-# RUN pip install --upgrade --pre torch torchvision --index-url https://download.pytorch.org/whl/nightly/cu128
-
-SHELL ["/bin/sh", "-c"]
+# Auto-activate cuRobo virtual environment in interactive shells
+RUN echo "" >> /home/${USERNAME}/.bashrc && \
+    echo "# cuRobo virtual environment" >> /home/${USERNAME}/.bashrc && \
+    echo "if [ -f ${CUROBO_VENV}/bin/activate ]; then" >> /home/${USERNAME}/.bashrc && \
+    echo "    source ${CUROBO_VENV}/bin/activate" >> /home/${USERNAME}/.bashrc && \
+    echo "fi" >> /home/${USERNAME}/.bashrc
 
 
 

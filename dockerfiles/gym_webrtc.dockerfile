@@ -54,7 +54,7 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
     cmake \
     build-essential \
     openssh-server && \
-    apt autoclean && apt autoremove && \
+    apt autoclean -y && apt autoremove -y && \
     rm -rf /var/lib/apt/lists/* /var/tmp/* /tmp/*
 
 
@@ -163,7 +163,7 @@ RUN echo "export LD_LIBRARY_PATH=/lib/x86_64-linux-gnu:\$LD_LIBRARY_PATH" >> /ho
 
 USER root
 # Clear cache
-RUN apt autoclean && apt autoremove && \
+RUN apt autoclean -y && apt autoremove -y && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Pitch to avoid removing all content in ~/.cache
