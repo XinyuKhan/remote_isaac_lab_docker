@@ -8,7 +8,7 @@ dev_push:
 dev_pull:
 	docker compose pull
 
-dev_up: dev_build
+dev_up:
 	docker compose up -d
 
 dev_down:
