@@ -1,10 +1,10 @@
 services:
-  webrtc_issaclab_build:
-    container_name: webrtc-issaclab-build
-    image: xinyukhan/remote_isaaclab_docker:${IMG_VERSION:-latest}
+  sim-5.1.0_lab-2.3.2_selkie_build:
+    container_name: sim-5.1.0_lab-2.3.2-selkie-build
+    image: xinyukhan/sim-5.1.0_lab-2.3.2_selkie:${IMG_VERSION:-latest}
     build:
       context: ../../
-      dockerfile: dockerfiles/dev_webrtc.dockerfile
+      dockerfile: dockerfiles/sim-5.1.0_lab-2.3.2_selkie.dockerfile
       args:
         - FROM_IMAGE=ghcr.io/selkies-project/nvidia-egl-desktop:22.04-20250629090949
     deploy:
@@ -57,9 +57,9 @@ services:
       --use-auth-secret
       --static-auth-secret=${COTURN_AUTH_SECRET}
     restart: unless-stopped
-  webrtc_isaaclab0:
-    container_name: webrtc-isaaclab0
-    image: xinyukhan/remote_isaaclab_docker:${IMG_VERSION:-latest}
+  sim-5.1.0_lab-2.3.2_selkie0:
+    container_name: sim-5.1.0_lab-2.3.2-selkie0
+    image: xinyukhan/sim-5.1.0_lab-2.3.2_selkie:${IMG_VERSION:-latest}
     depends_on:
       - coturn
     deploy:

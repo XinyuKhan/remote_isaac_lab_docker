@@ -25,7 +25,8 @@ RUN apt update && DEBIAN_FRONTEND=noninteractive \
     sudo \
     software-properties-common \
     net-tools \
-    htop \
+    btop \
+    tmux \
     cmake \
     build-essential \
     openssh-server && \
@@ -97,16 +98,18 @@ RUN pip install "isaacsim[all,extscache]==5.1.0" --extra-index-url https://pypi.
 
 RUN pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
 
-# Agree to Isaac Sim EULA
-ENV ACCEPT_EULA=Y
+RUN git clone https://github.com/isaac-sim/IsaacLab.git -b v2.3.2 /home/${USERNAME}/IsaacLab
 
-
-RUN git clone https://github.com/isaac-sim/IsaacLab.git /home/${USERNAME}/IsaacLab
+# Fix flatdict build error + pre-install setuptools for IsaacLab
+# setuptools >= 80 removed pkg_resources, so we need an older version to build flatdict
+# We use --no-build-isolation combined with explicit setuptools < 80
+RUN pip install "setuptools<80" "wheel" && \
+    pip install "flatdict==4.0.1" --no-build-isolation
 
 
 ENV TERM xterm-256color
 RUN cd /home/${USERNAME}/IsaacLab && \
-    ./isaaclab.sh -i
+    yes Y | ./isaaclab.sh -i
 
 SHELL ["/bin/sh", "-c"]
 
