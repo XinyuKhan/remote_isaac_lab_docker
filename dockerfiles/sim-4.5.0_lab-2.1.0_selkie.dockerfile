@@ -85,7 +85,7 @@ ENV CONDA_DIR=/opt/conda \
 
 RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
     conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
-    conda create -n env_isaaclab python=3.11
+    conda create -n env_isaaclab python=3.10
 
 RUN conda init bash && \
     echo "export PATH=/opt/conda/bin:\$PATH" >> /home/${USERNAME}/.bashrc && \
@@ -94,17 +94,18 @@ RUN conda init bash && \
 SHELL ["conda", "run", "-n", "env_isaaclab", "-v", "--no-capture-output", "/bin/bash", "-c"]
 
 
-RUN python -m pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+RUN python -m pip install torch==2.5.1 torchvision==0.20.1 --index-url https://download.pytorch.org/whl/cu118
 
 RUN python -m pip install --upgrade pip
 
 # Install Isaac Sim
-RUN python -m pip install 'isaacsim[all,extscache]==5.1.0' --extra-index-url https://pypi.nvidia.com
+RUN python -m pip install 'isaacsim[all,extscache]==4.5.0' --extra-index-url https://pypi.nvidia.com
+
 
 RUN python -m pip install "setuptools<80" "wheel"
 RUN python -m pip install --no-build-isolation "flatdict==4.0.1"
 
-RUN git clone https://github.com/isaac-sim/IsaacLab.git -b v2.3.2 /home/${USERNAME}/IsaacLab
+RUN git clone https://github.com/isaac-sim/IsaacLab.git -b v2.1.0 /home/${USERNAME}/IsaacLab
 
 
 ENV TERM=xterm-256color
