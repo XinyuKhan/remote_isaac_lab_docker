@@ -3,7 +3,7 @@ dev_build:
 	docker compose build
 
 dev_push:
-	docker compose push dev_webrtc_build
+	docker compose push sim-5.1.0_lab-2.3.2_selkie_build sim-4.5.0_lab-2.1.0_selkie_build
 
 dev_pull:
 	docker compose pull

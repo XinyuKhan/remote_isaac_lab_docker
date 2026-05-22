@@ -1,7 +1,7 @@
 services:
   sim-5.1.0_lab-2.3.2_selkie_build:
     container_name: sim-5.1.0_lab-2.3.2-selkie-build
-    image: xinyukhan/sim-5.1.0_lab-2.3.2_selkie:${IMG_VERSION:-latest}
+    image: ${IMG_REGISTRY:-xinyukhan}/sim-5.1.0_lab-2.3.2_selkie:${IMG_VERSION:-latest}
     build:
       context: ../../
       dockerfile: dockerfiles/sim-5.1.0_lab-2.3.2_selkie.dockerfile
@@ -11,7 +11,7 @@ services:
       replicas: 0
   sim-4.5.0_lab-2.1.0_selkie_build:
     container_name: sim-4.5.0_lab-2.1.0-selkie-build
-    image: xinyukhan/sim-4.5.0_lab-2.1.0_selkie:${IMG_VERSION:-latest}
+    image: ${IMG_REGISTRY:-xinyukhan}/sim-4.5.0_lab-2.1.0_selkie:${IMG_VERSION:-latest}
     build:
       context: ../../
       dockerfile: dockerfiles/sim-4.5.0_lab-2.1.0_selkie.dockerfile
@@ -21,7 +21,7 @@ services:
       replicas: 0
   # webrtc_gym_build:
   #   container_name: webrtc-gym-build
-  #   image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
+  #   image: ${IMG_REGISTRY:-xinyukhan}/remote_gym_docker:${IMG_VERSION:-latest}
   #   build:
   #     context: ../../
   #     dockerfile: dockerfiles/gym_webrtc.dockerfile
@@ -31,7 +31,7 @@ services:
   #     replicas: 0
   # webrtc_playgroud_build:
   #   container_name: webrtc-playgroud-build
-  #   image: xinyukhan/remote_playgroud_docker:${IMG_VERSION:-latest}
+  #   image: ${IMG_REGISTRY:-xinyukhan}/remote_playgroud_docker:${IMG_VERSION:-latest}
   #   build:
   #     context: ../../
   #     dockerfile: dockerfiles/playgroud_webrtc.dockerfile
@@ -41,7 +41,7 @@ services:
   #     replicas: 0
   # webrtc_curobo_build:
   #   container_name: webrtc-curobo-build
-  #   image: xinyukhan/remote_curobo_docker:${IMG_VERSION:-latest}
+  #   image: ${IMG_REGISTRY:-xinyukhan}/remote_curobo_docker:${IMG_VERSION:-latest}
   #   build:
   #     context: ../../
   #     dockerfile: dockerfiles/curobo_webrtc.dockerfile
@@ -51,7 +51,7 @@ services:
   #   deploy:
   #     replicas: 0
   coturn:
-    container_name: gym-coturn
+    container_name: coturn
     image: coturn/coturn
     ports:
       - "${COTURN_PORT:-3478}:3478/udp"
@@ -69,7 +69,7 @@ services:
     restart: unless-stopped
   sim-5.1.0_lab-2.3.2_selkie0:
     container_name: sim-5.1.0_lab-2.3.2-selkie0
-    image: xinyukhan/sim-5.1.0_lab-2.3.2_selkie:${IMG_VERSION:-latest}
+    image: ${IMG_REGISTRY:-xinyukhan}/sim-5.1.0_lab-2.3.2_selkie:${IMG_VERSION:-latest}
     depends_on:
       - coturn
     deploy:
@@ -118,7 +118,7 @@ services:
     restart: unless-stopped
   sim-4.5.0_lab-2.1.0_selkie0:
     container_name: sim-4.5.0_lab-2.1.0-selkie0
-    image: xinyukhan/sim-4.5.0_lab-2.1.0_selkie:${IMG_VERSION:-latest}
+    image: ${IMG_REGISTRY:-xinyukhan}/sim-4.5.0_lab-2.1.0_selkie:${IMG_VERSION:-latest}
     depends_on:
       - coturn
     deploy:
@@ -161,9 +161,13 @@ services:
     ports:
       - "8081:8080"
       - "2221:2220"
+    volumes:
+      - ~/Projects:/home/ubuntu/Projects
+    tty: true
+    restart: unless-stopped
   # webrtc-gym0:
   #   container_name: webrtc-gym0
-  #   image: xinyukhan/remote_gym_docker:${IMG_VERSION:-latest}
+  #   image: ${IMG_REGISTRY:-xinyukhan}/remote_gym_docker:${IMG_VERSION:-latest}
   #   depends_on:
   #     - coturn
   #   deploy:
@@ -212,7 +216,7 @@ services:
   #   restart: unless-stopped
   # webrtc_playgroud0:
   #   container_name: webrtc-playgroud0
-  #   image: xinyukhan/remote_playgroud_docker:${IMG_VERSION:-latest}
+  #   image: ${IMG_REGISTRY:-xinyukhan}/remote_playgroud_docker:${IMG_VERSION:-latest}
   #   depends_on:
   #     - coturn
   #   deploy:
@@ -261,7 +265,7 @@ services:
   #   restart: unless-stopped
   # webrtc_curobo0:
   #   container_name: webrtc-curobo0
-  #   image: xinyukhan/remote_curobo_docker:${IMG_VERSION:-latest}
+  #   image: ${IMG_REGISTRY:-xinyukhan}/remote_curobo_docker:${IMG_VERSION:-latest}
   #   depends_on:
   #     - coturn
   #   deploy:

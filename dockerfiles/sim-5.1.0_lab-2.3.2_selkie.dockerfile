@@ -14,7 +14,6 @@ USER root
 
 
 RUN apt update && DEBIAN_FRONTEND=noninteractive \
-    apt upgrade -y && \
     apt install -y --no-install-recommends \
     locales \
     git \
@@ -91,25 +90,35 @@ RUN conda init bash && \
     echo "export PATH=/opt/conda/bin:\$PATH" >> /home/${USERNAME}/.bashrc && \
     echo "conda activate env_isaaclab" >> /home/${USERNAME}/.bashrc
 
+# Disable pip cache globally so all pip invocations (including those inside
+# isaaclab.sh and conda run subshells) do not leave wheels/HTTP caches in the image.
+# Use both env vars and a user-level pip.conf for belt-and-suspenders — pip reads
+# pip.conf directly regardless of how `conda run` rewrites the environment.
+ENV PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+RUN mkdir -p /home/${USERNAME}/.config/pip && \
+    printf '[global]\nno-cache-dir = true\ndisable-pip-version-check = true\n' > /home/${USERNAME}/.config/pip/pip.conf
+
 SHELL ["conda", "run", "-n", "env_isaaclab", "-v", "--no-capture-output", "/bin/bash", "-c"]
 
 
-RUN python -m pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128
+RUN python -m pip install --upgrade pip && \
+    python -m pip install 'isaacsim[all,extscache]==5.1.0' --extra-index-url https://pypi.nvidia.com && \
+    python -m pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128 && \
+    python -m pip install "setuptools<80" "wheel" && \
+    python -m pip install --no-build-isolation "flatdict==4.0.1" && \
+    conda clean -afy && \
+    rm -rf /root/.cache/pip /home/${USERNAME}/.cache/pip /tmp/*
 
-RUN python -m pip install --upgrade pip
-
-# Install Isaac Sim
-RUN python -m pip install 'isaacsim[all,extscache]==5.1.0' --extra-index-url https://pypi.nvidia.com
-
-RUN python -m pip install "setuptools<80" "wheel"
-RUN python -m pip install --no-build-isolation "flatdict==4.0.1"
-
-RUN git clone https://github.com/isaac-sim/IsaacLab.git -b v2.3.2 /home/${USERNAME}/IsaacLab
+RUN git clone --depth 1 https://github.com/isaac-sim/IsaacLab.git -b v2.3.2 /home/${USERNAME}/IsaacLab
 
 
 ENV TERM=xterm-256color
 RUN cd /home/${USERNAME}/IsaacLab && \
-    yes Y | ./isaaclab.sh -i
+    yes Y | ./isaaclab.sh -i && \
+    python -m pip install -U torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cu128 && \
+    conda clean -afy && \
+    rm -rf /root/.cache/pip /home/${USERNAME}/.cache/pip /tmp/*
 
 SHELL ["/bin/sh", "-c"]
 
@@ -123,7 +132,10 @@ SHELL ["/bin/sh", "-c"]
 USER root
 # Clear cache
 RUN apt autoclean -y && apt autoremove -y && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
+    rm -rf /opt/conda/pkgs/* && \
+    find /opt/conda -depth -type d -name __pycache__ -exec rm -rf {} + && \
+    find /home/${USERNAME}/IsaacLab -depth -type d -name __pycache__ -exec rm -rf {} +
 
 # Pitch to avoid removing all content in ~/.cache
 RUN sed -i "s|rm -rf /tmp/.X\* ~/.cache|rm -rf /tmp/.X\* ~/.cache/gstreamer\* ~/.cache/ksplash ~/.cache/nvidia ~/.cache/plasma\* ~/.cache/qt\* ~/.cache/ksycoca5\* ~/.cache/motd.legal-displayed|g" /etc/entrypoint.sh
